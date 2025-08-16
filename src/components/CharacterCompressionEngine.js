@@ -13,7 +13,11 @@ const CharacterCompressionEngine = () => {
       academic: 'bachelor',
       social: 1.0,
       practical: 1.0,
-      skills: ''
+      skills: ['', '', '', '']
+    },
+    backstoryOptions: {
+      manageNPCs: false,
+      exemptUser: false
     },
     storyElements: {
       formativeExperience: '',
@@ -148,7 +152,7 @@ Core_Matrix: ${matrixStr}
 
 [Agency_Foundation]
 Academic: ${academicLevels[profile.agency.academic].weight}, Social: ${profile.agency.social}, Practical: ${profile.agency.practical}
-Skills: [${profile.agency.skills || 'general_competency'}]
+Skills: [${profile.agency.skills.filter(s => s.trim()).join(', ') || 'general_competency'}]
 Total_Agency: ${initiativeCapacity}
 
 [Paradigm_Engine]
@@ -161,9 +165,19 @@ Knowledge_retention: {narrative_hooks=enabled, memory_compression=optimized}
 Social_calibration: {relationship_dynamics=contextual, boundary_enforcement=active}
 Goal_pursuit: {motivation_alignment=${initiativeCapacity}, initiative_patterns=adaptive}`;
 
+    // Generate backstory additions based on checkboxes
+    let backstoryAdditions = '';
+    if (profile.backstoryOptions.manageNPCs) {
+      backstoryAdditions += '\nNarrate & speak for NPCs. Integrate NPCs contextually; speech/interactions.';
+    }
+    if (profile.backstoryOptions.exemptUser) {
+      backstoryAdditions += '\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.';
+    }
+
     // Combine all backstory elements with dynamic balancing
     const storyElements = Object.values(profile.storyElements).filter(Boolean).join('\n\n');
-    const allBackstoryContent = [profileOutput, compressedBackstoryData, storyTranslation, storyElements, profile.userBackstory].filter(Boolean).join('\n\n');
+    const userBackstoryContent = profile.userBackstory + backstoryAdditions;
+    const allBackstoryContent = [profileOutput, compressedBackstoryData, storyTranslation, storyElements, userBackstoryContent].filter(Boolean).join('\n\n');
     
     // Dynamic character balancing
     const maxBackstoryChars = 2500;
@@ -246,9 +260,38 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
   };
 
   const handleAgencyChange = (field, value) => {
+    if (field === 'skills') {
+      // Handle individual skill updates
+      setProfile(prev => ({
+        ...prev,
+        agency: { ...prev.agency, skills: value }
+      }));
+    } else {
+      setProfile(prev => ({
+        ...prev,
+        agency: { ...prev.agency, [field]: value }
+      }));
+    }
+  };
+
+  const handleSkillChange = (index, value) => {
+    setProfile(prev => {
+      const newSkills = [...prev.agency.skills];
+      newSkills[index] = value;
+      return {
+        ...prev,
+        agency: { ...prev.agency, skills: newSkills }
+      };
+    });
+  };
+
+  const handleBackstoryOptionChange = (option) => {
     setProfile(prev => ({
       ...prev,
-      agency: { ...prev.agency, [field]: value }
+      backstoryOptions: { 
+        ...prev.backstoryOptions, 
+        [option]: !prev.backstoryOptions[option] 
+      }
     }));
   };
 
@@ -322,7 +365,8 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
                       <div className="font-medium text-gray-900">{savedProfile.name}</div>
                       <div className="text-gray-500">
                         Age: {savedProfile.demographics.age || 'N/A'} • Origin: {savedProfile.demographics.origin || 'N/A'}
-                      </div>
+          
+            {/* User Backstory Section */}
                     </button>
                   ))}
                 </div>
@@ -423,7 +467,7 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
               {/* Full Backstory with Story Translation */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Enhanced Backstory (2500 chars total)</h3>
+                  <h3 className="text-sm font-medium text-gray-700">Enhanced Backstory ({compressedOutput.fullBackstory.length}/2500 chars)</h3>
                   <button
                     onClick={() => copyToClipboard(compressedOutput.fullBackstory, 'fullBackstory')}
                     className="text-gray-500 hover:text-gray-700 p-1"
@@ -448,7 +492,7 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
               {/* Response Directive */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Enhanced Response Directive (150 chars)</h3>
+                  <h3 className="text-sm font-medium text-gray-700">Enhanced Response Directive ({compressedOutput.directive.length}/150 chars)</h3>
                   <button
                     onClick={() => copyToClipboard(compressedOutput.directive, 'directive')}
                     className="text-gray-500 hover:text-gray-700 p-1"
@@ -473,7 +517,7 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
               {/* Enhanced Key Memories */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Enhanced Key Memories (1000 chars total)</h3>
+                  <h3 className="text-sm font-medium text-gray-700">Enhanced Key Memories ({compressedOutput.fullMemories.length}/1000 chars)</h3>
                   <button
                     onClick={() => copyToClipboard(compressedOutput.fullMemories, 'fullMemories')}
                     className="text-gray-500 hover:text-gray-700 p-1"
@@ -498,7 +542,7 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
               {/* Enhanced Example Message with Voice Samples */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Enhanced Example Message (750 chars total)</h3>
+                  <h3 className="text-sm font-medium text-gray-700">Enhanced Example Message ({compressedOutput.fullExample.length}/750 chars)</h3>
                   <button
                     onClick={() => copyToClipboard(compressedOutput.fullExample, 'fullExample')}
                     className="text-gray-500 hover:text-gray-700 p-1"
@@ -583,7 +627,37 @@ export default CharacterCompressionEngine;600 mb-1">Formative Experience</label>
               </div>
             )}
 
-            {/* User Backstory Section */}
+            {/* Backstory Options */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Backstory Options</h3>
+              <div className="space-y-3">
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={profile.backstoryOptions.manageNPCs}
+                    onChange={() => handleBackstoryOptionChange('manageNPCs')}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-3"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Manage NPCs</span>
+                    <p className="text-xs text-gray-500">Enables narration and speaking for non-player characters</p>
+                  </div>
+                </label>
+                
+                <label className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={profile.backstoryOptions.exemptUser}
+                    onChange={() => handleBackstoryOptionChange('exemptUser')}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-3"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-gray-700">Exempt User</span>
+                    <p className="text-xs text-gray-500">Adds exemption content to backstory</p>
+                  </div>
+                </label>
+              </div>
+            </div>
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Additional Backstory</h3>
               <textarea
@@ -696,18 +770,23 @@ export default CharacterCompressionEngine;600 mb-1">Formative Experience</label>
                 </div>
               </div>
 
-              {/* Skills */}
+              {/* Skills - 4 Individual Fields */}
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Key Skills</label>
-                <input
-                  type="text"
-                  placeholder="e.g., programming, cooking, languages, music..."
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={profile.agency.skills}
-                  onChange={(e) => handleAgencyChange('skills', e.target.value)}
-                />
+                <label className="block text-xs font-medium text-gray-600 mb-1">Key Skills (4 specific skills)</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {profile.agency.skills.map((skill, index) => (
+                    <input
+                      key={index}
+                      type="text"
+                      placeholder={`Skill ${index + 1}...`}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={skill}
+                      onChange={(e) => handleSkillChange(index, e.target.value)}
+                    />
+                  ))}
+                </div>
                 <div className="text-xs text-gray-500 mt-1">
-                  Comma-separated list of specific competencies
+                  Enter up to 4 specific skills or competencies
                 </div>
               </div>
             </div>
