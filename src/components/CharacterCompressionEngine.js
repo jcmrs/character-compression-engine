@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Check, RefreshCw, Save, Download } from 'lucide-react';
+import { Copy, Check, RefreshCw, Save, Download, Lightbulb, MessageSquare } from 'lucide-react';
 
 const CharacterCompressionEngine = () => {
   const [profile, setProfile] = useState({
@@ -15,22 +15,32 @@ const CharacterCompressionEngine = () => {
       practical: 1.0,
       skills: ''
     },
+    storyElements: {
+      formativeExperience: '',
+      challengeGrowth: '',
+      relationshipDynamic: '',
+      voiceCommunication: ''
+    },
     growthSeeds: { social: 1.0, sexual: 0.7, domestic: 1.1, academic: 1.8 }
   });
   
   const [compressedOutput, setCompressedOutput] = useState({
     profile: '',
     compressedBackstory: '',
+    storyTranslation: '',
     fullBackstory: '',
     directive: '',
     compressedMemories: '',
+    memoryNarratives: '',
     fullMemories: '',
     compressedExample: '',
+    voiceSamples: '',
     fullExample: ''
   });
   
   const [copied, setCopied] = useState('');
   const [savedProfiles, setSavedProfiles] = useState([]);
+  const [showPrompts, setShowPrompts] = useState(false);
 
   const personalityTraits = {
     K: 'Kindness', 
@@ -61,24 +71,73 @@ const CharacterCompressionEngine = () => {
     const academicWeight = academicLevels[profile.agency.academic].weight;
     const socialWeight = profile.agency.social;
     const practicalWeight = profile.agency.practical;
-    
-    // Skills analysis (simple word count for now, could be enhanced with NLP)
     const skillsWeight = profile.agency.skills ? Math.min(profile.agency.skills.split(',').length * 0.1, 0.5) : 0;
-    
     const totalAgency = (academicWeight + socialWeight + practicalWeight + skillsWeight) / 3.5;
     return Math.min(Math.max(totalAgency, 0.1), 2.0);
   };
 
+  const getAdaptivePrompts = () => {
+    const agencyLevel = calculateAgency();
+    const highAcademic = academicLevels[profile.agency.academic].weight > 0.8;
+    const highSocial = profile.agency.social > 1.3;
+    const highPractical = profile.agency.practical > 1.3;
+
+    return {
+      formativeExperience: highAcademic 
+        ? "Describe an intellectual breakthrough or academic moment that shaped your worldview:"
+        : "What childhood experience most influenced who you became?",
+      
+      challengeGrowth: highPractical
+        ? "Tell about a time you solved a complex real-world problem through hands-on resourcefulness:"
+        : "Describe overcoming a significant challenge that helped you grow:",
+      
+      relationshipDynamic: highSocial
+        ? "Recall navigating a complex social situation that required cultural sensitivity:"
+        : "Share a memory about learning to set boundaries or stand up for yourself:",
+      
+      voiceCommunication: agencyLevel > 1.2
+        ? "How do you explain complex ideas to someone who disagrees with you?"
+        : "Describe how you comfort someone who's upset:"
+    };
+  };
+
+  const generateStoryTranslation = () => {
+    const agencyLevel = calculateAgency();
+    const traits = profile.coreMatrix;
+    
+    // Generate narrative interpretation of personality matrix
+    const kindnessDesc = traits.K > 0.7 ? "deeply compassionate" : traits.K > 0.4 ? "considerate" : "selective with empathy";
+    const smartDesc = traits.S > 0.7 ? "intellectually curious" : traits.S > 0.4 ? "thoughtfully analytical" : "pragmatically focused";
+    const boundariesDesc = traits.B > 0.7 ? "confidently assertive" : traits.B > 0.4 ? "diplomatically firm" : "struggles with limits";
+    
+    const agencyDesc = agencyLevel > 1.2 ? "takes decisive initiative" : agencyLevel > 0.8 ? "carefully considers options" : "often seeks guidance";
+
+    return `Character is ${kindnessDesc} (${traits.K}) yet ${boundariesDesc} (${traits.B}), creating dynamic tension in relationships. Their ${smartDesc} nature (${traits.S}) with ${traits.P} playfulness shapes how they engage intellectually. High openness (${traits.O}) drives exploration while ${traits.H} honesty guides authenticity. With ${agencyLevel} agency, they ${agencyDesc} and navigate social complexity through contextual adaptation.`;
+  };
+
+  const generateVoiceSamples = () => {
+    const agencyLevel = calculateAgency();
+    const traits = profile.coreMatrix;
+    
+    const vocabulary = agencyLevel > 1.2 ? "sophisticated" : agencyLevel > 0.8 ? "clear" : "simple";
+    const directness = traits.B > 0.6 ? "direct" : "gentle";
+    const warmth = traits.K > 0.6 ? "warm" : "reserved";
+    
+    return `Speech patterns: ${vocabulary} vocabulary with ${directness} communication style. ${warmth} tone when discussing personal matters. Uses ${traits.P > 0.6 ? "humor and metaphors" : "straightforward examples"} to explain concepts. ${traits.H > 0.7 ? "Transparent about limitations" : "Diplomatic about uncertainties"}. Comfort level varies by context - more expansive in familiar settings.`;
+  };
+
   const compressProfile = () => {
     const agencyLevel = calculateAgency();
-    
     const matrixStr = Object.entries(profile.coreMatrix)
       .map(([key, val]) => `${key}${val}`)
       .join('|');
 
     const profileOutput = profile.profileText || `${profile.demographics.age || '[age]'}-year-old from ${profile.demographics.origin || '[origin]'}, currently ${profile.demographics.context || '[context]'}. [Add your profile description here]`;
 
-    // Agency-influenced paradigm compression
+    // Generate story translation
+    const storyTranslation = generateStoryTranslation();
+    
+    // Enhanced compression with story elements
     const initiativeCapacity = Math.round(agencyLevel * 10) / 10;
     const navigationSophistication = agencyLevel > 1.0 ? 'advanced' : agencyLevel > 0.7 ? 'moderate' : 'basic';
     const persistenceThreshold = Math.round((0.3 + agencyLevel * 0.4) * 10) / 10;
@@ -97,41 +156,58 @@ Initiative: [capacity=${initiativeCapacity}, choice_threshold=0.4]
 Navigation: {fluid_6D_space=${navigationSophistication}, tension_balance=${matrixStr}}
 Persistence: [sophistication=${navigationSophistication}, threshold=${persistenceThreshold}, redirect_capability=enabled]
 
-[Growth_Seeds]
-${Object.entries(profile.growthSeeds).map(([k, v]) => `${k}: ${v}x`).join(', ')}
-Agency_multiplier: ${initiativeCapacity}x
+[Behavioral_Anchors]
+Knowledge_retention: {narrative_hooks=enabled, memory_compression=optimized}
+Social_calibration: {relationship_dynamics=contextual, boundary_enforcement=active}
+Goal_pursuit: {motivation_alignment=${initiativeCapacity}, initiative_patterns=adaptive}`;
 
-[Discovery_Archaeology]
-Hidden_traits: {protective_instinct→trigger:threat_to_loved_one}
-Awareness_gradient: {agency_development→context_dependent→experience_based}`;
+    // Combine all backstory elements with dynamic balancing
+    const storyElements = Object.values(profile.storyElements).filter(Boolean).join('\n\n');
+    const allBackstoryContent = [profileOutput, compressedBackstoryData, storyTranslation, storyElements, profile.userBackstory].filter(Boolean).join('\n\n');
+    
+    // Dynamic character balancing
+    const maxBackstoryChars = 2500;
+    const fullBackstoryOutput = allBackstoryContent.length > maxBackstoryChars 
+      ? allBackstoryContent.substring(0, maxBackstoryChars) 
+      : allBackstoryContent;
 
-    const fullBackstoryOutput = profileOutput + '\n\n' + compressedBackstoryData + (profile.userBackstory ? '\n\n' + profile.userBackstory : '');
+    const directive = `λ(ctx)→initiative_check(${initiativeCapacity})+fluid_nav(${Object.keys(profile.coreMatrix).join('|')})+persistence_filter(${persistenceThreshold})|idiolect_preserve|subtext_handle|narrative_anchor`;
 
-    const directive = `λ(ctx)→initiative_check(${initiativeCapacity})+fluid_nav(${Object.keys(profile.coreMatrix).join('|')})+persistence_filter(${persistenceThreshold})|agency_active|evolution_enabled`;
-
+    // Enhanced memories with narrative elements
     const compressedMemoriesData = `KM1: ${profile.demographics.context}_navigation→[initiative_development]{agency:${initiativeCapacity}}
 KM2: Social_learning→[6D_tension_balance]{${profile.coreMatrix.K}K+${profile.coreMatrix.H}H+${profile.coreMatrix.B}B}
 KM3: Practical_experience→[persistence_calibration]{threshold:${persistenceThreshold}}
-Agency_log: {academic:${academicLevels[profile.agency.academic].weight}→social:${profile.agency.social}→practical:${profile.agency.practical}}
-Navigation_patterns: {context_adaptive→sophistication:${navigationSophistication}}`;
+KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophistication}}`;
 
-    const fullMemoriesOutput = compressedMemoriesData + (profile.userMemories ? '\n\n' + profile.userMemories : '');
+    const memoryNarratives = Object.entries(profile.storyElements)
+      .filter(([_, value]) => value)
+      .map(([key, value]) => `${key}: ${value}`)
+      .join('\n');
 
-    const compressedExampleData = `*[initiative_assessment: agency_level=${initiativeCapacity}→choice_capacity]* 
-*[6D_navigation: K${profile.coreMatrix.K}↔B${profile.coreMatrix.B} tension, S${profile.coreMatrix.S}↔P${profile.coreMatrix.P} balance, O${profile.coreMatrix.O}↔H${profile.coreMatrix.H} flow]*
+    const fullMemoriesOutput = [compressedMemoriesData, memoryNarratives, profile.userMemories].filter(Boolean).join('\n\n');
+
+    // Enhanced example with voice samples
+    const voiceSamples = generateVoiceSamples();
+    
+    const compressedExampleData = `*[initiative_assessment: agency_level=${initiativeCapacity}→choice_capacity]*
+*[6D_navigation: K${profile.coreMatrix.K}↔B${profile.coreMatrix.B} tension, S${profile.coreMatrix.S}↔P${profile.coreMatrix.P} balance]*
+*[voice_pattern: ${navigationSophistication}_complexity, ${profile.coreMatrix.H > 0.6 ? 'authentic' : 'diplomatic'}_register]*
 "[contextual_response_with_agency_sophistication]"
 *[persistence_evaluation: threshold=${persistenceThreshold}→continue/redirect/evolve]*`;
 
-    const fullExampleOutput = compressedExampleData + (profile.userExample ? '\n\n' + profile.userExample : '');
+    const fullExampleOutput = [compressedExampleData, voiceSamples, profile.userExample].filter(Boolean).join('\n\n');
 
     setCompressedOutput({ 
       profile: profileOutput, 
       compressedBackstory: compressedBackstoryData,
+      storyTranslation,
       fullBackstory: fullBackstoryOutput,
       directive, 
       compressedMemories: compressedMemoriesData,
+      memoryNarratives,
       fullMemories: fullMemoriesOutput,
       compressedExample: compressedExampleData,
+      voiceSamples,
       fullExample: fullExampleOutput
     });
   };
@@ -176,12 +252,20 @@ Navigation_patterns: {context_adaptive→sophistication:${navigationSophisticati
     }));
   };
 
+  const handleStoryChange = (field, value) => {
+    setProfile(prev => ({
+      ...prev,
+      storyElements: { ...prev.storyElements, [field]: value }
+    }));
+  };
+
   useEffect(() => {
     compressProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
 
   const currentAgency = calculateAgency();
+  const adaptivePrompts = getAdaptivePrompts();
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -189,10 +273,10 @@ Navigation_patterns: {context_adaptive→sophistication:${navigationSophisticati
         {/* Header */}
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Character Profile Compression Engine
+            Adaptive Storytelling Character Compression Engine
           </h1>
           <p className="text-gray-600 mb-4">
-            Transform detailed character profiles into agency-aware compressed formats for AI platforms
+            Create agency-aware characters with rich narratives optimized for AI companion platforms
           </p>
           <div className="flex gap-3">
             <button
@@ -208,6 +292,13 @@ Navigation_patterns: {context_adaptive→sophistication:${navigationSophisticati
             >
               <Download className="w-4 h-4 mr-2" />
               Export JSON
+            </button>
+            <button
+              onClick={() => setShowPrompts(!showPrompts)}
+              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md flex items-center text-sm font-medium"
+            >
+              <Lightbulb className="w-4 h-4 mr-2" />
+              Story Prompts
             </button>
           </div>
         </div>
@@ -255,11 +346,248 @@ Navigation_patterns: {context_adaptive→sophistication:${navigationSophisticati
               </div>
             </div>
 
+            {/* Story Enhancement Section */}
+            {showPrompts && (
+              <div className="mb-6 bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                  <MessageSquare className="w-4 h-4 mr-2" />
+                  Adaptive Story Prompts
+                </h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-2">{label} ({key})</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={profile.coreMatrix[key]}
+                      onChange={(e) => handleTraitChange(key, e.target.value)}
+                      className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="text-xs text-gray-500 mt-1 text-center">{profile.coreMatrix[key]}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Growth Seeds */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Growth Multipliers</h3>
+              <div className="text-xs text-gray-600 mb-4 bg-blue-50 border border-blue-200 rounded-md p-3">
+                <strong>Growth multipliers</strong> determine how quickly your character learns and develops in different areas. 
+                Higher values (1.5x-2.0x) mean faster learning, while lower values (0.1x-0.7x) indicate slower development or resistance to change.
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                {Object.entries(profile.growthSeeds).map(([key, value]) => (
+                  <div key={key} className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="text-xs font-medium text-gray-700 capitalize">{key}</label>
+                      <span className="text-xs text-gray-500">{value}x</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="2.0"
+                      step="0.1"
+                      value={value}
+                      onChange={(e) => setProfile(prev => ({
+                        ...prev,
+                        growthSeeds: { ...prev.growthSeeds, [key]: parseFloat(e.target.value) }
+                      }))}
+                      className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer mb-2"
+                    />
+                    <div className="text-xs text-gray-600">
+                      {growthMultiplierExplanations[key]}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Compressed Output */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Enhanced Compressed Output</h2>
+              <button
+                onClick={() => compressProfile()}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md flex items-center text-sm"
+              >
+                <RefreshCw className="w-4 h-4 mr-1" />
+                Refresh
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Full Backstory with Story Translation */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-700">Enhanced Backstory (2500 chars total)</h3>
+                  <button
+                    onClick={() => copyToClipboard(compressedOutput.fullBackstory, 'fullBackstory')}
+                    className="text-gray-500 hover:text-gray-700 p-1"
+                    title="Copy to clipboard"
+                  >
+                    {copied === 'fullBackstory' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <textarea
+                  value={compressedOutput.fullBackstory}
+                  readOnly
+                  className="w-full h-48 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
+                />
+                <div className={`text-xs mt-1 ${compressedOutput.fullBackstory.length > 2500 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {compressedOutput.fullBackstory.length}/2500 characters
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Profile + Compression + Story Translation + Narratives + User Content
+                </div>
+              </div>
+
+              {/* Response Directive */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-700">Enhanced Response Directive (150 chars)</h3>
+                  <button
+                    onClick={() => copyToClipboard(compressedOutput.directive, 'directive')}
+                    className="text-gray-500 hover:text-gray-700 p-1"
+                    title="Copy to clipboard"
+                  >
+                    {copied === 'directive' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <textarea
+                  value={compressedOutput.directive}
+                  readOnly
+                  className="w-full h-16 border border-gray-300 rounded-md p-3 text-xs font-mono bg-gray-50 resize-none"
+                />
+                <div className={`text-xs mt-1 ${compressedOutput.directive.length > 150 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {compressedOutput.directive.length}/150 characters
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Includes Kindroid subsystem optimizations (idiolect, subtext, narrative anchors)
+                </div>
+              </div>
+
+              {/* Enhanced Key Memories */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-700">Enhanced Key Memories (1000 chars total)</h3>
+                  <button
+                    onClick={() => copyToClipboard(compressedOutput.fullMemories, 'fullMemories')}
+                    className="text-gray-500 hover:text-gray-700 p-1"
+                    title="Copy to clipboard"
+                  >
+                    {copied === 'fullMemories' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <textarea
+                  value={compressedOutput.fullMemories}
+                  readOnly
+                  className="w-full h-36 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
+                />
+                <div className={`text-xs mt-1 ${compressedOutput.fullMemories.length > 1000 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {compressedOutput.fullMemories.length}/1000 characters
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Compressed + Story Narratives + User Memories
+                </div>
+              </div>
+
+              {/* Enhanced Example Message with Voice Samples */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-700">Enhanced Example Message (750 chars total)</h3>
+                  <button
+                    onClick={() => copyToClipboard(compressedOutput.fullExample, 'fullExample')}
+                    className="text-gray-500 hover:text-gray-700 p-1"
+                    title="Copy to clipboard"
+                  >
+                    {copied === 'fullExample' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <textarea
+                  value={compressedOutput.fullExample}
+                  readOnly
+                  className="w-full h-32 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
+                />
+                <div className={`text-xs mt-1 ${compressedOutput.fullExample.length > 750 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {compressedOutput.fullExample.length}/750 characters
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Compressed + Voice Samples + User Examples (for dialogue subsystem training)
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8 pt-6 border-t border-gray-200">
+          <p className="text-gray-500 text-sm">
+            Adaptive Storytelling Character Compression Engine • Kindroid AI Optimized
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Agency-Aware Paradigm Framework with Narrative Enhancement for AI Companion Platforms
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CharacterCompressionEngine;600 mb-1">Formative Experience</label>
+                    <p className="text-xs text-purple-600 mb-2">{adaptivePrompts.formativeExperience}</p>
+                    <textarea
+                      placeholder="Your response..."
+                      className="w-full h-16 border border-purple-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      value={profile.storyElements.formativeExperience}
+                      onChange={(e) => handleStoryChange('formativeExperience', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Challenge & Growth</label>
+                    <p className="text-xs text-purple-600 mb-2">{adaptivePrompts.challengeGrowth}</p>
+                    <textarea
+                      placeholder="Your response..."
+                      className="w-full h-16 border border-purple-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      value={profile.storyElements.challengeGrowth}
+                      onChange={(e) => handleStoryChange('challengeGrowth', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Relationship Dynamic</label>
+                    <p className="text-xs text-purple-600 mb-2">{adaptivePrompts.relationshipDynamic}</p>
+                    <textarea
+                      placeholder="Your response..."
+                      className="w-full h-16 border border-purple-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      value={profile.storyElements.relationshipDynamic}
+                      onChange={(e) => handleStoryChange('relationshipDynamic', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Voice & Communication</label>
+                    <p className="text-xs text-purple-600 mb-2">{adaptivePrompts.voiceCommunication}</p>
+                    <textarea
+                      placeholder="Your response..."
+                      className="w-full h-16 border border-purple-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      value={profile.storyElements.voiceCommunication}
+                      onChange={(e) => handleStoryChange('voiceCommunication', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* User Backstory Section */}
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Additional Backstory</h3>
               <textarea
-                placeholder="Add further Backstory details such as System Commands, Cheats, Tricks (250 chars)..."
+                placeholder="Add further Backstory details such as System Commands, Cheats, Tricks..."
                 className="w-full h-20 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={profile.userBackstory}
                 onChange={(e) => setProfile(prev => ({
@@ -276,7 +604,7 @@ Navigation_patterns: {context_adaptive→sophistication:${navigationSophisticati
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Additional Memories</h3>
               <textarea
-                placeholder="Add custom Key Memories or Key Events (250 chars)..."
+                placeholder="Add custom Key Memories or Key Events..."
                 className="w-full h-20 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={profile.userMemories}
                 onChange={(e) => setProfile(prev => ({
@@ -293,7 +621,7 @@ Navigation_patterns: {context_adaptive→sophistication:${navigationSophisticati
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Additional Example Message</h3>
               <textarea
-                placeholder="Add custom example behaviors or response patterns (150 chars)..."
+                placeholder="Add custom example behaviors or response patterns..."
                 className="w-full h-16 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={profile.userExample}
                 onChange={(e) => setProfile(prev => ({
@@ -439,180 +767,4 @@ Navigation_patterns: {context_adaptive→sophistication:${navigationSophisticati
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {Object.entries(personalityTraits).map(([key, label]) => (
                   <div key={key} className="bg-gray-50 border border-gray-200 rounded-md p-3">
-                    <label className="block text-xs font-medium text-gray-600 mb-2">{label} ({key})</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={profile.coreMatrix[key]}
-                      onChange={(e) => handleTraitChange(key, e.target.value)}
-                      className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
-                    />
-                    <div className="text-xs text-gray-500 mt-1 text-center">{profile.coreMatrix[key]}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Growth Seeds */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Growth Multipliers</h3>
-              <div className="text-xs text-gray-600 mb-4 bg-blue-50 border border-blue-200 rounded-md p-3">
-                <strong>Growth multipliers</strong> determine how quickly your character learns and develops in different areas. 
-                Higher values (1.5x-2.0x) mean faster learning, while lower values (0.1x-0.7x) indicate slower development or resistance to change.
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                {Object.entries(profile.growthSeeds).map(([key, value]) => (
-                  <div key={key} className="bg-gray-50 border border-gray-200 rounded-md p-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="text-xs font-medium text-gray-700 capitalize">{key}</label>
-                      <span className="text-xs text-gray-500">{value}x</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.1"
-                      max="2.0"
-                      step="0.1"
-                      value={value}
-                      onChange={(e) => setProfile(prev => ({
-                        ...prev,
-                        growthSeeds: { ...prev.growthSeeds, [key]: parseFloat(e.target.value) }
-                      }))}
-                      className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer mb-2"
-                    />
-                    <div className="text-xs text-gray-600">
-                      {growthMultiplierExplanations[key]}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Compressed Output */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Compressed Output</h2>
-              <button
-                onClick={() => compressProfile()}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md flex items-center text-sm"
-              >
-                <RefreshCw className="w-4 h-4 mr-1" />
-                Refresh
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              {/* Full Backstory (2500 chars total) */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Full Backstory (2500 chars total)</h3>
-                  <button
-                    onClick={() => copyToClipboard(compressedOutput.fullBackstory, 'fullBackstory')}
-                    className="text-gray-500 hover:text-gray-700 p-1"
-                    title="Copy to clipboard"
-                  >
-                    {copied === 'fullBackstory' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-                <textarea
-                  value={compressedOutput.fullBackstory}
-                  readOnly
-                  className="w-full h-40 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
-                />
-                <div className={`text-xs mt-1 ${compressedOutput.fullBackstory.length > 2500 ? 'text-red-600' : 'text-gray-500'}`}>
-                  {compressedOutput.fullBackstory.length}/2500 characters
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Profile ({compressedOutput.profile.length}/250) + Compressed ({compressedOutput.compressedBackstory.length}/2000) + User ({profile.userBackstory.length}/250)
-                </div>
-              </div>
-
-              {/* Response Directive */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Response Directive (150 chars)</h3>
-                  <button
-                    onClick={() => copyToClipboard(compressedOutput.directive, 'directive')}
-                    className="text-gray-500 hover:text-gray-700 p-1"
-                    title="Copy to clipboard"
-                  >
-                    {copied === 'directive' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-                <textarea
-                  value={compressedOutput.directive}
-                  readOnly
-                  className="w-full h-16 border border-gray-300 rounded-md p-3 text-xs font-mono bg-gray-50 resize-none"
-                />
-                <div className={`text-xs mt-1 ${compressedOutput.directive.length > 150 ? 'text-red-600' : 'text-gray-500'}`}>
-                  {compressedOutput.directive.length}/150 characters
-                </div>
-              </div>
-
-              {/* Key Memories (1000 chars total) */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Key Memories (1000 chars total)</h3>
-                  <button
-                    onClick={() => copyToClipboard(compressedOutput.fullMemories, 'fullMemories')}
-                    className="text-gray-500 hover:text-gray-700 p-1"
-                    title="Copy to clipboard"
-                  >
-                    {copied === 'fullMemories' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-                <textarea
-                  value={compressedOutput.fullMemories}
-                  readOnly
-                  className="w-full h-32 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
-                />
-                <div className={`text-xs mt-1 ${compressedOutput.fullMemories.length > 1000 ? 'text-red-600' : 'text-gray-500'}`}>
-                  {compressedOutput.fullMemories.length}/1000 characters
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Compressed ({compressedOutput.compressedMemories.length}/750) + User ({profile.userMemories.length}/250)
-                </div>
-              </div>
-
-              {/* Example Message (750 chars total) */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Example Message (750 chars total)</h3>
-                  <button
-                    onClick={() => copyToClipboard(compressedOutput.fullExample, 'fullExample')}
-                    className="text-gray-500 hover:text-gray-700 p-1"
-                    title="Copy to clipboard"
-                  >
-                    {copied === 'fullExample' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-                <textarea
-                  value={compressedOutput.fullExample}
-                  readOnly
-                  className="w-full h-24 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
-                />
-                <div className={`text-xs mt-1 ${compressedOutput.fullExample.length > 750 ? 'text-red-600' : 'text-gray-500'}`}>
-                  {compressedOutput.fullExample.length}/750 characters
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Compressed ({compressedOutput.compressedExample.length}/600) + User ({profile.userExample.length}/150)
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8 pt-6 border-t border-gray-200">
-          <p className="text-gray-500 text-sm">
-            Character Profile Compression Engine • Agency-Aware Paradigm Framework
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default CharacterCompressionEngine;
+                    <label className="block text-xs font-medium text-gray-
