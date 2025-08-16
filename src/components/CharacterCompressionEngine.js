@@ -7,6 +7,7 @@ const CharacterCompressionEngine = () => {
     profileText: '',
     userBackstory: '',
     userMemories: '',
+    userExample: '',
     coreMatrix: { K: 0.8, S: 0.7, P: 0.6, O: 0.9, H: 0.8, B: 0.7 },
     choiceParadigm: 'active_decision',
     guideposts: { primary: 'kind', secondary: 'honest', mediator: 'smart' },
@@ -20,7 +21,8 @@ const CharacterCompressionEngine = () => {
     directive: '',
     compressedMemories: '',
     fullMemories: '',
-    example: ''
+    compressedExample: '',
+    fullExample: ''
   });
   
   const [copied, setCopied] = useState('');
@@ -78,10 +80,12 @@ Discovery_markers: {protective_trait→dormant, size_awareness→threshold:0.8}`
 
     const fullMemoriesOutput = compressedMemoriesData + (profile.userMemories ? '\n\n' + profile.userMemories : '');
 
-    const example = `*[thought_process: guidepost_tension(${profile.guideposts.primary}+${profile.guideposts.secondary}+${profile.guideposts.mediator})→resolution]* 
+    const compressedExampleData = `*[thought_process: guidepost_tension(${profile.guideposts.primary}+${profile.guideposts.secondary}+${profile.guideposts.mediator})→resolution]* 
 "[authentic_response_with_choice_intentionality]" 
 *[action_with_growth_integration]*
 [discovery_hint: subtle_trait_emergence_if_triggered]`;
+
+    const fullExampleOutput = compressedExampleData + (profile.userExample ? '\n\n' + profile.userExample : '');
 
     setCompressedOutput({ 
       profile: profileOutput, 
@@ -90,7 +94,8 @@ Discovery_markers: {protective_trait→dormant, size_awareness→threshold:0.8}`
       directive, 
       compressedMemories: compressedMemoriesData,
       fullMemories: fullMemoriesOutput,
-      example 
+      compressedExample: compressedExampleData,
+      fullExample: fullExampleOutput
     });
   };
 
@@ -208,7 +213,7 @@ Discovery_markers: {protective_trait→dormant, size_awareness→threshold:0.8}`
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Additional Backstory</h3>
               <textarea
-                placeholder="Add your own backstory details, personality notes, or character background (250 chars)..."
+                placeholder="Add further Backstory details such as System Commands, Cheats, Tricks (250 chars)..."
                 className="w-full h-20 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={profile.userBackstory}
                 onChange={(e) => setProfile(prev => ({
@@ -225,7 +230,7 @@ Discovery_markers: {protective_trait→dormant, size_awareness→threshold:0.8}`
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Additional Memories</h3>
               <textarea
-                placeholder="Add custom memories, experiences, or key events (250 chars)..."
+                placeholder="Add custom Key Memories or Key Events (250 chars)..."
                 className="w-full h-20 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 value={profile.userMemories}
                 onChange={(e) => setProfile(prev => ({
@@ -235,6 +240,23 @@ Discovery_markers: {protective_trait→dormant, size_awareness→threshold:0.8}`
               />
               <div className="text-xs text-gray-500 mt-1">
                 {profile.userMemories.length}/250 characters
+              </div>
+            </div>
+
+            {/* User Example Section */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Additional Example Message</h3>
+              <textarea
+                placeholder="Add custom example behaviors or response patterns (150 chars)..."
+                className="w-full h-16 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={profile.userExample}
+                onChange={(e) => setProfile(prev => ({
+                  ...prev,
+                  userExample: e.target.value
+                }))}
+              />
+              <div className="text-xs text-gray-500 mt-1">
+                {profile.userExample.length}/150 characters
               </div>
             </div>
             
@@ -451,25 +473,28 @@ Discovery_markers: {protective_trait→dormant, size_awareness→threshold:0.8}`
                 </div>
               </div>
 
-              {/* Example Message */}
+              {/* Example Message (750 chars total) */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Example Message (750 chars)</h3>
+                  <h3 className="text-sm font-medium text-gray-700">Example Message (750 chars total)</h3>
                   <button
-                    onClick={() => copyToClipboard(compressedOutput.example, 'example')}
+                    onClick={() => copyToClipboard(compressedOutput.fullExample, 'fullExample')}
                     className="text-gray-500 hover:text-gray-700 p-1"
                     title="Copy to clipboard"
                   >
-                    {copied === 'example' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                    {copied === 'fullExample' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
                 <textarea
-                  value={compressedOutput.example}
+                  value={compressedOutput.fullExample}
                   readOnly
-                  className="w-full h-20 border border-gray-300 rounded-md p-3 text-xs font-mono bg-gray-50 resize-none"
+                  className="w-full h-24 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
                 />
-                <div className={`text-xs mt-1 ${compressedOutput.example.length > 750 ? 'text-red-600' : 'text-gray-500'}`}>
-                  {compressedOutput.example.length}/750 characters
+                <div className={`text-xs mt-1 ${compressedOutput.fullExample.length > 750 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {compressedOutput.fullExample.length}/750 characters
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Compressed ({compressedOutput.compressedExample.length}/600) + User ({profile.userExample.length}/150)
                 </div>
               </div>
             </div>
