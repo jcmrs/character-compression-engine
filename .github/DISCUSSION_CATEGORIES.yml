@@ -1,0 +1,27 @@
+- name: "💡 Ideas"
+  description: "Share ideas for new features and improvements"
+  emoji: "💡"
+
+- name: "❓ Q&A"  
+  description: "Ask questions about using the compression engine"
+  emoji: "❓"
+
+- name: "🧪 Character Experiments"
+  description: "Share interesting character profiles and compression results"
+  emoji: "🧪"
+
+- name: "🤖 AI Platform Integration"
+  description: "Discuss compatibility with different AI companion platforms"
+  emoji: "🤖"
+
+- name: "📊 Compression Research"
+  description: "Deep dive into compression algorithms and optimization"
+  emoji: "📊"
+
+- name: "🎨 UI/UX Feedback"
+  description: "Suggestions for improving the user interface"
+  emoji: "🎨"
+
+- name: "📢 General"
+  description: "General discussion about the project"
+  emoji: "📢"
