@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Upload, Eye, Settings, Zap, FileText, Copy, Check, Save, RefreshCw } from 'lucide-react';
+import { Download, Settings, Zap, FileText, Copy, Check, Save, RefreshCw } from 'lucide-react';
 
 const CharacterCompressionEngine = () => {
   const [activeTab, setActiveTab] = useState('profile');
@@ -98,6 +98,7 @@ Discovery_markers: {protective_trait→dormant, size_awareness→threshold:0.8}`
 
   useEffect(() => {
     compressProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile]);
 
   return (
