@@ -75,7 +75,8 @@ const CharacterCompressionEngine = () => {
     const academicWeight = academicLevels[profile.agency.academic].weight;
     const socialWeight = profile.agency.social;
     const practicalWeight = profile.agency.practical;
-    const skillsWeight = profile.agency.skills ? Math.min(profile.agency.skills.split(',').length * 0.1, 0.5) : 0;
+    const skillCount = profile.agency.skills.filter(skill => skill.trim()).length;
+    const skillsWeight = skillCount * 0.1;
     const totalAgency = (academicWeight + socialWeight + practicalWeight + skillsWeight) / 3.5;
     return Math.min(Math.max(totalAgency, 0.1), 2.0);
   };
@@ -109,11 +110,9 @@ const CharacterCompressionEngine = () => {
     const agencyLevel = calculateAgency();
     const traits = profile.coreMatrix;
     
-    // Generate narrative interpretation of personality matrix
     const kindnessDesc = traits.K > 0.7 ? "deeply compassionate" : traits.K > 0.4 ? "considerate" : "selective with empathy";
     const smartDesc = traits.S > 0.7 ? "intellectually curious" : traits.S > 0.4 ? "thoughtfully analytical" : "pragmatically focused";
     const boundariesDesc = traits.B > 0.7 ? "confidently assertive" : traits.B > 0.4 ? "diplomatically firm" : "struggles with limits";
-    
     const agencyDesc = agencyLevel > 1.2 ? "takes decisive initiative" : agencyLevel > 0.8 ? "carefully considers options" : "often seeks guidance";
 
     return `Character is ${kindnessDesc} (${traits.K}) yet ${boundariesDesc} (${traits.B}), creating dynamic tension in relationships. Their ${smartDesc} nature (${traits.S}) with ${traits.P} playfulness shapes how they engage intellectually. High openness (${traits.O}) drives exploration while ${traits.H} honesty guides authenticity. With ${agencyLevel} agency, they ${agencyDesc} and navigate social complexity through contextual adaptation.`;
@@ -138,10 +137,7 @@ const CharacterCompressionEngine = () => {
 
     const profileOutput = profile.profileText || `${profile.demographics.age || '[age]'}-year-old from ${profile.demographics.origin || '[origin]'}, currently ${profile.demographics.context || '[context]'}. [Add your profile description here]`;
 
-    // Generate story translation
     const storyTranslation = generateStoryTranslation();
-    
-    // Enhanced compression with story elements
     const initiativeCapacity = Math.round(agencyLevel * 10) / 10;
     const navigationSophistication = agencyLevel > 1.0 ? 'advanced' : agencyLevel > 0.7 ? 'moderate' : 'basic';
     const persistenceThreshold = Math.round((0.3 + agencyLevel * 0.4) * 10) / 10;
@@ -165,7 +161,6 @@ Knowledge_retention: {narrative_hooks=enabled, memory_compression=optimized}
 Social_calibration: {relationship_dynamics=contextual, boundary_enforcement=active}
 Goal_pursuit: {motivation_alignment=${initiativeCapacity}, initiative_patterns=adaptive}`;
 
-    // Generate backstory additions based on checkboxes
     let backstoryAdditions = '';
     if (profile.backstoryOptions.manageNPCs) {
       backstoryAdditions += '\nNarrate & speak for NPCs. Integrate NPCs contextually; speech/interactions.';
@@ -174,12 +169,10 @@ Goal_pursuit: {motivation_alignment=${initiativeCapacity}, initiative_patterns=a
       backstoryAdditions += '\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.';
     }
 
-    // Combine all backstory elements with dynamic balancing
     const storyElements = Object.values(profile.storyElements).filter(Boolean).join('\n\n');
     const userBackstoryContent = profile.userBackstory + backstoryAdditions;
     const allBackstoryContent = [profileOutput, compressedBackstoryData, storyTranslation, storyElements, userBackstoryContent].filter(Boolean).join('\n\n');
     
-    // Dynamic character balancing
     const maxBackstoryChars = 2500;
     const fullBackstoryOutput = allBackstoryContent.length > maxBackstoryChars 
       ? allBackstoryContent.substring(0, maxBackstoryChars) 
@@ -187,7 +180,6 @@ Goal_pursuit: {motivation_alignment=${initiativeCapacity}, initiative_patterns=a
 
     const directive = `λ(ctx)→initiative_check(${initiativeCapacity})+fluid_nav(${Object.keys(profile.coreMatrix).join('|')})+persistence_filter(${persistenceThreshold})|idiolect_preserve|subtext_handle|narrative_anchor`;
 
-    // Enhanced memories with narrative elements
     const compressedMemoriesData = `KM1: ${profile.demographics.context}_navigation→[initiative_development]{agency:${initiativeCapacity}}
 KM2: Social_learning→[6D_tension_balance]{${profile.coreMatrix.K}K+${profile.coreMatrix.H}H+${profile.coreMatrix.B}B}
 KM3: Practical_experience→[persistence_calibration]{threshold:${persistenceThreshold}}
@@ -200,7 +192,6 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
 
     const fullMemoriesOutput = [compressedMemoriesData, memoryNarratives, profile.userMemories].filter(Boolean).join('\n\n');
 
-    // Enhanced example with voice samples
     const voiceSamples = generateVoiceSamples();
     
     const compressedExampleData = `*[initiative_assessment: agency_level=${initiativeCapacity}→choice_capacity]*
@@ -261,7 +252,6 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
 
   const handleAgencyChange = (field, value) => {
     if (field === 'skills') {
-      // Handle individual skill updates
       setProfile(prev => ({
         ...prev,
         agency: { ...prev.agency, skills: value }
@@ -365,8 +355,7 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
                       <div className="font-medium text-gray-900">{savedProfile.name}</div>
                       <div className="text-gray-500">
                         Age: {savedProfile.demographics.age || 'N/A'} • Origin: {savedProfile.demographics.origin || 'N/A'}
-          
-            {/* User Backstory Section */}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -399,189 +388,7 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
                 </h3>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-2">{label} ({key})</label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={profile.coreMatrix[key]}
-                      onChange={(e) => handleTraitChange(key, e.target.value)}
-                      className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
-                    />
-                    <div className="text-xs text-gray-500 mt-1 text-center">{profile.coreMatrix[key]}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Growth Seeds */}
-            <div>
-              <h3 className="text-sm font-medium text-gray-700 mb-3">Growth Multipliers</h3>
-              <div className="text-xs text-gray-600 mb-4 bg-blue-50 border border-blue-200 rounded-md p-3">
-                <strong>Growth multipliers</strong> determine how quickly your character learns and develops in different areas. 
-                Higher values (1.5x-2.0x) mean faster learning, while lower values (0.1x-0.7x) indicate slower development or resistance to change.
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                {Object.entries(profile.growthSeeds).map(([key, value]) => (
-                  <div key={key} className="bg-gray-50 border border-gray-200 rounded-md p-3">
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="text-xs font-medium text-gray-700 capitalize">{key}</label>
-                      <span className="text-xs text-gray-500">{value}x</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0.1"
-                      max="2.0"
-                      step="0.1"
-                      value={value}
-                      onChange={(e) => setProfile(prev => ({
-                        ...prev,
-                        growthSeeds: { ...prev.growthSeeds, [key]: parseFloat(e.target.value) }
-                      }))}
-                      className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer mb-2"
-                    />
-                    <div className="text-xs text-gray-600">
-                      {growthMultiplierExplanations[key]}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Compressed Output */}
-          <div className="bg-white border border-gray-200 rounded-lg p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">Enhanced Compressed Output</h2>
-              <button
-                onClick={() => compressProfile()}
-                className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md flex items-center text-sm"
-              >
-                <RefreshCw className="w-4 h-4 mr-1" />
-                Refresh
-              </button>
-            </div>
-
-            <div className="space-y-6">
-              {/* Full Backstory with Story Translation */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Enhanced Backstory ({compressedOutput.fullBackstory.length}/2500 chars)</h3>
-                  <button
-                    onClick={() => copyToClipboard(compressedOutput.fullBackstory, 'fullBackstory')}
-                    className="text-gray-500 hover:text-gray-700 p-1"
-                    title="Copy to clipboard"
-                  >
-                    {copied === 'fullBackstory' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-                <textarea
-                  value={compressedOutput.fullBackstory}
-                  readOnly
-                  className="w-full h-48 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
-                />
-                <div className={`text-xs mt-1 ${compressedOutput.fullBackstory.length > 2500 ? 'text-red-600' : 'text-gray-500'}`}>
-                  {compressedOutput.fullBackstory.length}/2500 characters
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Profile + Compression + Story Translation + Narratives + User Content
-                </div>
-              </div>
-
-              {/* Response Directive */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Enhanced Response Directive ({compressedOutput.directive.length}/150 chars)</h3>
-                  <button
-                    onClick={() => copyToClipboard(compressedOutput.directive, 'directive')}
-                    className="text-gray-500 hover:text-gray-700 p-1"
-                    title="Copy to clipboard"
-                  >
-                    {copied === 'directive' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-                <textarea
-                  value={compressedOutput.directive}
-                  readOnly
-                  className="w-full h-16 border border-gray-300 rounded-md p-3 text-xs font-mono bg-gray-50 resize-none"
-                />
-                <div className={`text-xs mt-1 ${compressedOutput.directive.length > 150 ? 'text-red-600' : 'text-gray-500'}`}>
-                  {compressedOutput.directive.length}/150 characters
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Includes Kindroid subsystem optimizations (idiolect, subtext, narrative anchors)
-                </div>
-              </div>
-
-              {/* Enhanced Key Memories */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Enhanced Key Memories ({compressedOutput.fullMemories.length}/1000 chars)</h3>
-                  <button
-                    onClick={() => copyToClipboard(compressedOutput.fullMemories, 'fullMemories')}
-                    className="text-gray-500 hover:text-gray-700 p-1"
-                    title="Copy to clipboard"
-                  >
-                    {copied === 'fullMemories' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-                <textarea
-                  value={compressedOutput.fullMemories}
-                  readOnly
-                  className="w-full h-36 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
-                />
-                <div className={`text-xs mt-1 ${compressedOutput.fullMemories.length > 1000 ? 'text-red-600' : 'text-gray-500'}`}>
-                  {compressedOutput.fullMemories.length}/1000 characters
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Compressed + Story Narratives + User Memories
-                </div>
-              </div>
-
-              {/* Enhanced Example Message with Voice Samples */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-sm font-medium text-gray-700">Enhanced Example Message ({compressedOutput.fullExample.length}/750 chars)</h3>
-                  <button
-                    onClick={() => copyToClipboard(compressedOutput.fullExample, 'fullExample')}
-                    className="text-gray-500 hover:text-gray-700 p-1"
-                    title="Copy to clipboard"
-                  >
-                    {copied === 'fullExample' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-                <textarea
-                  value={compressedOutput.fullExample}
-                  readOnly
-                  className="w-full h-32 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
-                />
-                <div className={`text-xs mt-1 ${compressedOutput.fullExample.length > 750 ? 'text-red-600' : 'text-gray-500'}`}>
-                  {compressedOutput.fullExample.length}/750 characters
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  Compressed + Voice Samples + User Examples (for dialogue subsystem training)
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8 pt-6 border-t border-gray-200">
-          <p className="text-gray-500 text-sm">
-            Adaptive Storytelling Character Compression Engine • Kindroid AI Optimized
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            Agency-Aware Paradigm Framework with Narrative Enhancement for AI Companion Platforms
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default CharacterCompressionEngine;600 mb-1">Formative Experience</label>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Formative Experience</label>
                     <p className="text-xs text-purple-600 mb-2">{adaptivePrompts.formativeExperience}</p>
                     <textarea
                       placeholder="Your response..."
@@ -658,6 +465,8 @@ export default CharacterCompressionEngine;600 mb-1">Formative Experience</label>
                 </label>
               </div>
             </div>
+
+            {/* User Backstory Section */}
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Additional Backstory</h3>
               <textarea
@@ -846,4 +655,186 @@ export default CharacterCompressionEngine;600 mb-1">Formative Experience</label>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                 {Object.entries(personalityTraits).map(([key, label]) => (
                   <div key={key} className="bg-gray-50 border border-gray-200 rounded-md p-3">
-                    <label className="block text-xs font-medium text-gray-
+                    <label className="block text-xs font-medium text-gray-600 mb-2">{label} ({key})</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={profile.coreMatrix[key]}
+                      onChange={(e) => handleTraitChange(key, e.target.value)}
+                      className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="text-xs text-gray-500 mt-1 text-center">{profile.coreMatrix[key]}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Growth Seeds */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Growth Multipliers</h3>
+              <div className="text-xs text-gray-600 mb-4 bg-blue-50 border border-blue-200 rounded-md p-3">
+                <strong>Growth multipliers</strong> determine how quickly your character learns and develops in different areas. 
+                Higher values (1.5x-2.0x) mean faster learning, while lower values (0.1x-0.7x) indicate slower development or resistance to change.
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                {Object.entries(profile.growthSeeds).map(([key, value]) => (
+                  <div key={key} className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="text-xs font-medium text-gray-700 capitalize">{key}</label>
+                      <span className="text-xs text-gray-500">{value}x</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="2.0"
+                      step="0.1"
+                      value={value}
+                      onChange={(e) => setProfile(prev => ({
+                        ...prev,
+                        growthSeeds: { ...prev.growthSeeds, [key]: parseFloat(e.target.value) }
+                      }))}
+                      className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer mb-2"
+                    />
+                    <div className="text-xs text-gray-600">
+                      {growthMultiplierExplanations[key]}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Compressed Output */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Enhanced Compressed Output</h2>
+              <button
+                onClick={() => compressProfile()}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md flex items-center text-sm"
+              >
+                <RefreshCw className="w-4 h-4 mr-1" />
+                Refresh
+              </button>
+            </div>
+
+            <div className="space-y-6">
+              {/* Full Backstory with Story Translation */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-700">Enhanced Backstory ({compressedOutput.fullBackstory.length}/2500 chars)</h3>
+                  <button
+                    onClick={() => copyToClipboard(compressedOutput.fullBackstory, 'fullBackstory')}
+                    className="text-gray-500 hover:text-gray-700 p-1"
+                    title="Copy to clipboard"
+                  >
+                    {copied === 'fullBackstory' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <textarea
+                  value={compressedOutput.fullBackstory}
+                  readOnly
+                  className="w-full h-48 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
+                />
+                <div className={`text-xs mt-1 ${compressedOutput.fullBackstory.length > 2500 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {compressedOutput.fullBackstory.length}/2500 characters
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Profile + Compression + Story Translation + Narratives + User Content
+                </div>
+              </div>
+
+              {/* Response Directive */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-700">Enhanced Response Directive ({compressedOutput.directive.length}/150 chars)</h3>
+                  <button
+                    onClick={() => copyToClipboard(compressedOutput.directive, 'directive')}
+                    className="text-gray-500 hover:text-gray-700 p-1"
+                    title="Copy to clipboard"
+                  >
+                    {copied === 'directive' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <textarea
+                  value={compressedOutput.directive}
+                  readOnly
+                  className="w-full h-16 border border-gray-300 rounded-md p-3 text-xs font-mono bg-gray-50 resize-none"
+                />
+                <div className={`text-xs mt-1 ${compressedOutput.directive.length > 150 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {compressedOutput.directive.length}/150 characters
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Includes Kindroid subsystem optimizations (idiolect, subtext, narrative anchors)
+                </div>
+              </div>
+
+              {/* Enhanced Key Memories */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-700">Enhanced Key Memories ({compressedOutput.fullMemories.length}/1000 chars)</h3>
+                  <button
+                    onClick={() => copyToClipboard(compressedOutput.fullMemories, 'fullMemories')}
+                    className="text-gray-500 hover:text-gray-700 p-1"
+                    title="Copy to clipboard"
+                  >
+                    {copied === 'fullMemories' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <textarea
+                  value={compressedOutput.fullMemories}
+                  readOnly
+                  className="w-full h-36 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
+                />
+                <div className={`text-xs mt-1 ${compressedOutput.fullMemories.length > 1000 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {compressedOutput.fullMemories.length}/1000 characters
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Compressed + Story Narratives + User Memories
+                </div>
+              </div>
+
+              {/* Enhanced Example Message with Voice Samples */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-medium text-gray-700">Enhanced Example Message ({compressedOutput.fullExample.length}/750 chars)</h3>
+                  <button
+                    onClick={() => copyToClipboard(compressedOutput.fullExample, 'fullExample')}
+                    className="text-gray-500 hover:text-gray-700 p-1"
+                    title="Copy to clipboard"
+                  >
+                    {copied === 'fullExample' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                <textarea
+                  value={compressedOutput.fullExample}
+                  readOnly
+                  className="w-full h-32 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
+                />
+                <div className={`text-xs mt-1 ${compressedOutput.fullExample.length > 750 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {compressedOutput.fullExample.length}/750 characters
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Compressed + Voice Samples + User Examples (for dialogue subsystem training)
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8 pt-6 border-t border-gray-200">
+          <p className="text-gray-500 text-sm">
+            Adaptive Storytelling Character Compression Engine • Kindroid AI Optimized
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Agency-Aware Paradigm Framework with Narrative Enhancement for AI Companion Platforms
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CharacterCompressionEngine;
