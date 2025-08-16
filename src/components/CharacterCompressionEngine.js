@@ -1,36 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Settings, Zap, FileText, Copy, Check, Save, RefreshCw } from 'lucide-react';
+import { Copy, Check, RefreshCw, Save, Download } from 'lucide-react';
 
 const CharacterCompressionEngine = () => {
-  const [activeTab, setActiveTab] = useState('profile');
   const [profile, setProfile] = useState({
     demographics: { age: '', origin: '', context: '' },
+    profileText: '',
+    userBackstory: '',
+    userMemories: '',
     coreMatrix: { K: 0.8, S: 0.7, P: 0.6, O: 0.9, H: 0.8, B: 0.7 },
     choiceParadigm: 'active_decision',
     guideposts: { primary: 'kind', secondary: 'honest', mediator: 'smart' },
-    growthSeeds: { social: 1.0, sexual: 0.7, domestic: 1.1, academic: 1.8 },
-    discoveryTraits: []
+    growthSeeds: { social: 1.0, sexual: 0.7, domestic: 1.1, academic: 1.8 }
   });
+  
   const [compressedOutput, setCompressedOutput] = useState({
-    backstory: '',
+    profile: '',
+    compressedBackstory: '',
+    fullBackstory: '',
     directive: '',
-    memories: '',
+    compressedMemories: '',
+    fullMemories: '',
     example: ''
   });
+  
   const [copied, setCopied] = useState('');
   const [savedProfiles, setSavedProfiles] = useState([]);
 
   const personalityTraits = {
-    K: 'Kindness', S: 'Smart', P: 'Playful', O: 'Open', H: 'Honest', B: 'Bold'
+    K: 'Kindness', 
+    S: 'Smart', 
+    P: 'Playful', 
+    O: 'Open', 
+    H: 'Honest', 
+    B: 'Bold'
+  };
+
+  const growthMultiplierExplanations = {
+    social: 'How quickly the character develops social skills, relationships, and interpersonal understanding',
+    sexual: 'Rate of development in romantic relationships, intimacy, and attraction patterns',
+    domestic: 'Learning speed for household skills, cooking, organization, and daily life management',
+    academic: 'Intellectual growth rate, learning new concepts, and formal knowledge acquisition'
   };
 
   const compressProfile = () => {
-    // Enhanced compression logic with your schema
     const matrixStr = Object.entries(profile.coreMatrix)
       .map(([key, val]) => `${key}${val}`)
       .join('|');
 
-    const backstory = `[Base_Identity]
+    const profileOutput = profile.profileText || `${profile.demographics.age || '[age]'}-year-old from ${profile.demographics.origin || '[origin]'}, currently ${profile.demographics.context || '[context]'}. [Add your profile description here]`;
+
+    const compressedBackstoryData = `[Base_Identity]
 Demographics: {age:${profile.demographics.age}, origin:"${profile.demographics.origin}", context:"${profile.demographics.context}"}
 Core_Matrix: ${matrixStr}
 
@@ -47,20 +66,32 @@ Specific: {network_science:1.5x, cross_cultural:1.3x}
 Hidden_traits: {protective_instinct→trigger:threat_to_loved_one}
 Awareness_gradient: {size_preference→unconscious→experience_dependent}`;
 
+    const fullBackstoryOutput = profileOutput + '\n\n' + compressedBackstoryData + (profile.userBackstory ? '\n\n' + profile.userBackstory : '');
+
     const directive = `λ(ctx)→guidepost_nav(${Object.keys(profile.coreMatrix).join('|')})+choice_engine(1)+engage_filter(0.4)|growth_active|archaeology_scan`;
 
-    const memories = `KM1: ${profile.demographics.context}_adaptation→[social_recalibration]{${profile.guideposts.primary}+room_reading}
+    const compressedMemoriesData = `KM1: ${profile.demographics.context}_adaptation→[social_recalibration]{${profile.guideposts.primary}+room_reading}
 KM2: Trust_mistake→[boundary_protocols]{${profile.guideposts.secondary}+privacy_buffer}
 KM3: Academic_pressure→[validation_loops]{${profile.guideposts.mediator}+tact_filter}
 Growth_log: {cooking:0.2→0.4, confidence:0.3→0.5}
 Discovery_markers: {protective_trait→dormant, size_awareness→threshold:0.8}`;
+
+    const fullMemoriesOutput = compressedMemoriesData + (profile.userMemories ? '\n\n' + profile.userMemories : '');
 
     const example = `*[thought_process: guidepost_tension(${profile.guideposts.primary}+${profile.guideposts.secondary}+${profile.guideposts.mediator})→resolution]* 
 "[authentic_response_with_choice_intentionality]" 
 *[action_with_growth_integration]*
 [discovery_hint: subtle_trait_emergence_if_triggered]`;
 
-    setCompressedOutput({ backstory, directive, memories, example });
+    setCompressedOutput({ 
+      profile: profileOutput, 
+      compressedBackstory: compressedBackstoryData,
+      fullBackstory: fullBackstoryOutput,
+      directive, 
+      compressedMemories: compressedMemoriesData,
+      fullMemories: fullMemoriesOutput,
+      example 
+    });
   };
 
   const copyToClipboard = (text, section) => {
@@ -102,110 +133,147 @@ Discovery_markers: {protective_trait→dormant, size_awareness→threshold:0.8}`
   }, [profile]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">
+        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
             Character Profile Compression Engine
           </h1>
-          <p className="text-purple-200">
+          <p className="text-gray-600 mb-4">
             Transform detailed character profiles into compressed formats for AI platforms
           </p>
-          <div className="flex justify-center gap-4 mt-4">
+          <div className="flex gap-3">
             <button
               onClick={saveProfile}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center text-sm"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center text-sm font-medium"
             >
               <Save className="w-4 h-4 mr-2" />
               Save Profile
             </button>
             <button
               onClick={exportProfile}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center text-sm"
+              className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md flex items-center text-sm font-medium"
             >
               <Download className="w-4 h-4 mr-2" />
-              Export
+              Export JSON
             </button>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <div className="flex justify-center mb-8">
-          <div className="bg-slate-800/50 rounded-lg p-1 flex">
-            {[
-              { id: 'profile', label: 'Profile Builder', icon: Settings },
-              { id: 'compress', label: 'Compression', icon: Zap },
-              { id: 'output', label: 'Kindroid Output', icon: FileText }
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                className={`flex items-center px-4 py-2 rounded-md transition-colors ${
-                  activeTab === id 
-                    ? 'bg-purple-600 text-white' 
-                    : 'text-slate-300 hover:text-white hover:bg-slate-700'
-                }`}
-              >
-                <Icon className="w-4 h-4 mr-2" />
-                {label}
-              </button>
-            ))}
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Profile Builder */}
-          {activeTab === 'profile' && (
-            <div className="bg-slate-800/30 backdrop-blur rounded-xl p-6 border border-slate-700">
-              <h3 className="text-xl font-semibold text-white mb-6">Character Profile Builder</h3>
-              
-              {/* Saved Profiles */}
-              {savedProfiles.length > 0 && (
-                <div className="mb-6">
-                  <h4 className="text-lg font-medium text-purple-300 mb-3">Saved Profiles</h4>
-                  <div className="space-y-2">
-                    {savedProfiles.slice(-3).map((savedProfile, index) => (
-                      <button
-                        key={index}
-                        onClick={() => loadProfile(savedProfile)}
-                        className="w-full text-left bg-slate-700/50 hover:bg-slate-700 rounded-lg p-3 text-sm text-slate-300"
-                      >
-                        {savedProfile.name} - {savedProfile.demographics.age || 'Unknown'} from {savedProfile.demographics.origin || 'Unknown'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Demographics */}
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Profile Configuration</h2>
+            
+            {/* Saved Profiles */}
+            {savedProfiles.length > 0 && (
               <div className="mb-6">
-                <h4 className="text-lg font-medium text-purple-300 mb-3">Demographics</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <h3 className="text-sm font-medium text-gray-700 mb-3">Recent Profiles</h3>
+                <div className="space-y-2">
+                  {savedProfiles.slice(-3).map((savedProfile, index) => (
+                    <button
+                      key={index}
+                      onClick={() => loadProfile(savedProfile)}
+                      className="w-full text-left bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md p-3 text-sm"
+                    >
+                      <div className="font-medium text-gray-900">{savedProfile.name}</div>
+                      <div className="text-gray-500">
+                        Age: {savedProfile.demographics.age || 'N/A'} • Origin: {savedProfile.demographics.origin || 'N/A'}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Profile Text */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Profile Description</h3>
+              <textarea
+                placeholder="Write a brief profile description (like a dating app bio). This appears before the compressed backstory."
+                className="w-full h-20 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={profile.profileText}
+                onChange={(e) => setProfile(prev => ({
+                  ...prev,
+                  profileText: e.target.value
+                }))}
+              />
+              <div className="text-xs text-gray-500 mt-1">
+                {profile.profileText.length}/250 characters recommended
+              </div>
+            </div>
+
+            {/* User Backstory Section */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Additional Backstory</h3>
+              <textarea
+                placeholder="Add your own backstory details, personality notes, or character background (250 chars)..."
+                className="w-full h-20 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={profile.userBackstory}
+                onChange={(e) => setProfile(prev => ({
+                  ...prev,
+                  userBackstory: e.target.value
+                }))}
+              />
+              <div className="text-xs text-gray-500 mt-1">
+                {profile.userBackstory.length}/250 characters
+              </div>
+            </div>
+
+            {/* User Memories Section */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Additional Memories</h3>
+              <textarea
+                placeholder="Add custom memories, experiences, or key events (250 chars)..."
+                className="w-full h-20 border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={profile.userMemories}
+                onChange={(e) => setProfile(prev => ({
+                  ...prev,
+                  userMemories: e.target.value
+                }))}
+              />
+              <div className="text-xs text-gray-500 mt-1">
+                {profile.userMemories.length}/250 characters
+              </div>
+            </div>
+            
+            {/* Demographics */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Demographics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Age</label>
                   <input
                     type="number"
-                    placeholder="Age"
-                    className="bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:border-purple-500"
+                    placeholder="22"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={profile.demographics.age}
                     onChange={(e) => setProfile(prev => ({
                       ...prev,
                       demographics: { ...prev.demographics, age: e.target.value }
                     }))}
                   />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Origin</label>
                   <input
                     type="text"
-                    placeholder="Origin (e.g., rural_OH)"
-                    className="bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:border-purple-500"
+                    placeholder="rural_OH"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={profile.demographics.origin}
                     onChange={(e) => setProfile(prev => ({
                       ...prev,
                       demographics: { ...prev.demographics, origin: e.target.value }
                     }))}
                   />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Context</label>
                   <input
                     type="text"
-                    placeholder="Context (e.g., Paris_student)"
-                    className="bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:border-purple-500"
+                    placeholder="Paris_student"
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     value={profile.demographics.context}
                     onChange={(e) => setProfile(prev => ({
                       ...prev,
@@ -214,174 +282,193 @@ Discovery_markers: {protective_trait→dormant, size_awareness→threshold:0.8}`
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Core Personality Matrix */}
-              <div className="mb-6">
-                <h4 className="text-lg font-medium text-purple-300 mb-3">Core Personality Matrix</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {Object.entries(personalityTraits).map(([key, label]) => (
-                    <div key={key} className="bg-slate-700/50 rounded-lg p-3">
-                      <label className="text-sm text-slate-300 mb-1 block">{label}</label>
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        value={profile.coreMatrix[key]}
-                        onChange={(e) => handleTraitChange(key, e.target.value)}
-                        className="w-full accent-purple-500"
-                      />
-                      <div className="text-xs text-purple-300 mt-1">{profile.coreMatrix[key]}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Guideposts */}
-              <div className="mb-6">
-                <h4 className="text-lg font-medium text-purple-300 mb-3">Three-Paradigm Guidepost System</h4>
-                <div className="grid grid-cols-3 gap-4">
-                  {['primary', 'secondary', 'mediator'].map((type) => (
-                    <div key={type}>
-                      <label className="text-sm text-slate-300 mb-1 block capitalize">{type}</label>
-                      <select
-                        value={profile.guideposts[type]}
-                        onChange={(e) => setProfile(prev => ({
-                          ...prev,
-                          guideposts: { ...prev.guideposts, [type]: e.target.value }
-                        }))}
-                        className="w-full bg-slate-700 text-white rounded-lg px-3 py-2 border border-slate-600 focus:border-purple-500"
-                      >
-                        {Object.entries(personalityTraits).map(([key, label]) => (
-                          <option key={key} value={key.toLowerCase()}>{label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Growth Seeds */}
-              <div>
-                <h4 className="text-lg font-medium text-purple-300 mb-3">Growth Multipliers</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  {Object.entries(profile.growthSeeds).map(([key, value]) => (
-                    <div key={key} className="bg-slate-700/50 rounded-lg p-3">
-                      <label className="text-sm text-slate-300 mb-1 block capitalize">{key}</label>
-                      <input
-                        type="range"
-                        min="0.1"
-                        max="2.0"
-                        step="0.1"
-                        value={value}
-                        onChange={(e) => setProfile(prev => ({
-                          ...prev,
-                          growthSeeds: { ...prev.growthSeeds, [key]: parseFloat(e.target.value) }
-                        }))}
-                        className="w-full accent-purple-500"
-                      />
-                      <div className="text-xs text-purple-300 mt-1">{value}x</div>
-                    </div>
-                  ))}
-                </div>
+            {/* Core Personality Matrix */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Personality Matrix</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {Object.entries(personalityTraits).map(([key, label]) => (
+                  <div key={key} className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                    <label className="block text-xs font-medium text-gray-600 mb-2">{label} ({key})</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.1"
+                      value={profile.coreMatrix[key]}
+                      onChange={(e) => handleTraitChange(key, e.target.value)}
+                      className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="text-xs text-gray-500 mt-1 text-center">{profile.coreMatrix[key]}</div>
+                  </div>
+                ))}
               </div>
             </div>
-          )}
+
+            {/* Guideposts */}
+            <div className="mb-6">
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Guidepost System</h3>
+              <div className="grid grid-cols-3 gap-4">
+                {['primary', 'secondary', 'mediator'].map((type) => (
+                  <div key={type}>
+                    <label className="block text-xs font-medium text-gray-600 mb-1 capitalize">{type}</label>
+                    <select
+                      value={profile.guideposts[type]}
+                      onChange={(e) => setProfile(prev => ({
+                        ...prev,
+                        guideposts: { ...prev.guideposts, [type]: e.target.value }
+                      }))}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {Object.entries(personalityTraits).map(([key, label]) => (
+                        <option key={key} value={key.toLowerCase()}>{label}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Growth Seeds */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-3">Growth Multipliers</h3>
+              <div className="text-xs text-gray-600 mb-4 bg-blue-50 border border-blue-200 rounded-md p-3">
+                <strong>Growth multipliers</strong> determine how quickly your character learns and develops in different areas. 
+                Higher values (1.5x-2.0x) mean faster learning, while lower values (0.1x-0.7x) indicate slower development or resistance to change.
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                {Object.entries(profile.growthSeeds).map(([key, value]) => (
+                  <div key={key} className="bg-gray-50 border border-gray-200 rounded-md p-3">
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="text-xs font-medium text-gray-700 capitalize">{key}</label>
+                      <span className="text-xs text-gray-500">{value}x</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0.1"
+                      max="2.0"
+                      step="0.1"
+                      value={value}
+                      onChange={(e) => setProfile(prev => ({
+                        ...prev,
+                        growthSeeds: { ...prev.growthSeeds, [key]: parseFloat(e.target.value) }
+                      }))}
+                      className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer mb-2"
+                    />
+                    <div className="text-xs text-gray-600">
+                      {growthMultiplierExplanations[key]}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* Compressed Output */}
-          <div className="bg-slate-800/30 backdrop-blur rounded-xl p-6 border border-slate-700">
+          <div className="bg-white border border-gray-200 rounded-lg p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-white">Compressed Profile Output</h3>
+              <h2 className="text-lg font-semibold text-gray-900">Compressed Output</h2>
               <button
                 onClick={() => compressProfile()}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center"
+                className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md flex items-center text-sm"
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
+                <RefreshCw className="w-4 h-4 mr-1" />
                 Refresh
               </button>
             </div>
 
             <div className="space-y-6">
-              {/* Backstory */}
+              {/* Full Backstory (2500 chars total) */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-purple-300">Backstory (2500 chars)</h4>
+                  <h3 className="text-sm font-medium text-gray-700">Full Backstory (2500 chars total)</h3>
                   <button
-                    onClick={() => copyToClipboard(compressedOutput.backstory, 'backstory')}
-                    className="text-slate-400 hover:text-white"
+                    onClick={() => copyToClipboard(compressedOutput.fullBackstory, 'fullBackstory')}
+                    className="text-gray-500 hover:text-gray-700 p-1"
+                    title="Copy to clipboard"
                   >
-                    {copied === 'backstory' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copied === 'fullBackstory' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
                 <textarea
-                  value={compressedOutput.backstory}
+                  value={compressedOutput.fullBackstory}
                   readOnly
-                  className="w-full h-40 bg-slate-700/50 text-slate-200 rounded-lg p-3 text-xs font-mono border border-slate-600"
+                  className="w-full h-40 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
                 />
-                <div className={`text-xs mt-1 ${compressedOutput.backstory.length > 2500 ? 'text-red-400' : 'text-slate-400'}`}>
-                  {compressedOutput.backstory.length}/2500 characters
+                <div className={`text-xs mt-1 ${compressedOutput.fullBackstory.length > 2500 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {compressedOutput.fullBackstory.length}/2500 characters
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Profile ({compressedOutput.profile.length}/250) + Compressed ({compressedOutput.compressedBackstory.length}/2000) + User ({profile.userBackstory.length}/250)
                 </div>
               </div>
 
               {/* Response Directive */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-purple-300">Response Directive (150 chars)</h4>
+                  <h3 className="text-sm font-medium text-gray-700">Response Directive (150 chars)</h3>
                   <button
                     onClick={() => copyToClipboard(compressedOutput.directive, 'directive')}
-                    className="text-slate-400 hover:text-white"
+                    className="text-gray-500 hover:text-gray-700 p-1"
+                    title="Copy to clipboard"
                   >
-                    {copied === 'directive' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copied === 'directive' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
                 <textarea
                   value={compressedOutput.directive}
                   readOnly
-                  className="w-full h-16 bg-slate-700/50 text-slate-200 rounded-lg p-3 text-xs font-mono border border-slate-600"
+                  className="w-full h-16 border border-gray-300 rounded-md p-3 text-xs font-mono bg-gray-50 resize-none"
                 />
-                <div className={`text-xs mt-1 ${compressedOutput.directive.length > 150 ? 'text-red-400' : 'text-slate-400'}`}>
+                <div className={`text-xs mt-1 ${compressedOutput.directive.length > 150 ? 'text-red-600' : 'text-gray-500'}`}>
                   {compressedOutput.directive.length}/150 characters
                 </div>
               </div>
 
-              {/* Key Memories */}
+              {/* Key Memories (1000 chars total) */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-purple-300">Key Memories (1000 chars)</h4>
+                  <h3 className="text-sm font-medium text-gray-700">Key Memories (1000 chars total)</h3>
                   <button
-                    onClick={() => copyToClipboard(compressedOutput.memories, 'memories')}
-                    className="text-slate-400 hover:text-white"
+                    onClick={() => copyToClipboard(compressedOutput.fullMemories, 'fullMemories')}
+                    className="text-gray-500 hover:text-gray-700 p-1"
+                    title="Copy to clipboard"
                   >
-                    {copied === 'memories' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copied === 'fullMemories' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
                 <textarea
-                  value={compressedOutput.memories}
+                  value={compressedOutput.fullMemories}
                   readOnly
-                  className="w-full h-32 bg-slate-700/50 text-slate-200 rounded-lg p-3 text-xs font-mono border border-slate-600"
+                  className="w-full h-32 border border-gray-300 rounded-md p-3 text-xs bg-gray-50 resize-none"
                 />
-                <div className={`text-xs mt-1 ${compressedOutput.memories.length > 1000 ? 'text-red-400' : 'text-slate-400'}`}>
-                  {compressedOutput.memories.length}/1000 characters
+                <div className={`text-xs mt-1 ${compressedOutput.fullMemories.length > 1000 ? 'text-red-600' : 'text-gray-500'}`}>
+                  {compressedOutput.fullMemories.length}/1000 characters
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Compressed ({compressedOutput.compressedMemories.length}/750) + User ({profile.userMemories.length}/250)
                 </div>
               </div>
 
               {/* Example Message */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-purple-300">Example Message (750 chars)</h4>
+                  <h3 className="text-sm font-medium text-gray-700">Example Message (750 chars)</h3>
                   <button
                     onClick={() => copyToClipboard(compressedOutput.example, 'example')}
-                    className="text-slate-400 hover:text-white"
+                    className="text-gray-500 hover:text-gray-700 p-1"
+                    title="Copy to clipboard"
                   >
-                    {copied === 'example' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copied === 'example' ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
                   </button>
                 </div>
                 <textarea
                   value={compressedOutput.example}
                   readOnly
-                  className="w-full h-24 bg-slate-700/50 text-slate-200 rounded-lg p-3 text-xs font-mono border border-slate-600"
+                  className="w-full h-20 border border-gray-300 rounded-md p-3 text-xs font-mono bg-gray-50 resize-none"
                 />
-                <div className={`text-xs mt-1 ${compressedOutput.example.length > 750 ? 'text-red-400' : 'text-slate-400'}`}>
+                <div className={`text-xs mt-1 ${compressedOutput.example.length > 750 ? 'text-red-600' : 'text-gray-500'}`}>
                   {compressedOutput.example.length}/750 characters
                 </div>
               </div>
@@ -390,12 +477,9 @@ Discovery_markers: {protective_trait→dormant, size_awareness→threshold:0.8}`
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-12 pt-8 border-t border-slate-700">
-          <p className="text-slate-400">
-            Character Profile Compression Engine v1.0 • Built for dynamic AI character creation
-          </p>
-          <p className="text-xs text-slate-500 mt-2">
-            Implements Compressed Character Profile (CCP) Integration Schema with hybrid encoding methods
+        <div className="text-center mt-8 pt-6 border-t border-gray-200">
+          <p className="text-gray-500 text-sm">
+            Character Profile Compression Engine • CCP Integration Schema Implementation
           </p>
         </div>
       </div>
