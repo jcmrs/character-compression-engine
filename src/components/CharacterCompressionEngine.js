@@ -17,7 +17,14 @@ const CharacterCompressionEngine = () => {
     },
     backstoryOptions: {
       manageNPCs: false,
-      exemptUser: false
+      exemptUser: false,
+      intimacyDramaCheat: false,
+      userSpecificReactions: false,
+      userNPCReactions: false
+    },
+    phonemeInputs: {
+      userSpecific: '',
+      general: ['', '', '']
     },
     storyElements: {
       formativeExperience: '',
@@ -162,11 +169,26 @@ Social_calibration: {relationship_dynamics=contextual, boundary_enforcement=acti
 Goal_pursuit: {motivation_alignment=${initiativeCapacity}, initiative_patterns=adaptive}`;
 
     let backstoryAdditions = '';
+    
     if (profile.backstoryOptions.manageNPCs) {
-      backstoryAdditions += '\nNarrate & speak for NPCs. Integrate NPCs contextually; speech/interactions.';
+      if (profile.backstoryOptions.exemptUser) {
+        backstoryAdditions += '\n[System: narrates NPCs without user involvement. Enforce \'block userinsert\']';
+      } else {
+        backstoryAdditions += '\n[System: narrates NPCs]';
+      }
     }
-    if (profile.backstoryOptions.exemptUser) {
-      backstoryAdditions += '\nLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.';
+
+    if (profile.backstoryOptions.intimacyDramaCheat) {
+      if (profile.backstoryOptions.userSpecificReactions) {
+        const userWord = profile.phonemeInputs.userSpecific || 'dear';
+        backstoryAdditions += `\nSubconscious phoneme reactions activate solely with user's speech patterns - "${userWord}" → emotional connection uptick`;
+      }
+      if (profile.backstoryOptions.userNPCReactions) {
+        const word1 = profile.phonemeInputs.general[0] || 'honey';
+        const word2 = profile.phonemeInputs.general[1] || 'gorgeous';
+        const word3 = profile.phonemeInputs.general[2] || 'sexy';
+        backstoryAdditions += `\nExhibits subtle unconscious linguistic sensitivities to specific phonemes:\n- "${word1}" → arousal uptick\n- "${word2}" → intimacy nudge\n- "${word3}" → inhibition drop`;
+      }
     }
 
     const storyElements = Object.values(profile.storyElements).filter(Boolean).join('\n\n');
@@ -276,13 +298,46 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
   };
 
   const handleBackstoryOptionChange = (option) => {
-    setProfile(prev => ({
-      ...prev,
-      backstoryOptions: { 
-        ...prev.backstoryOptions, 
-        [option]: !prev.backstoryOptions[option] 
+    setProfile(prev => {
+      const newBackstoryOptions = { ...prev.backstoryOptions };
+      
+      // Toggle the clicked option
+      newBackstoryOptions[option] = !newBackstoryOptions[option];
+      
+      // Handle conditional logic
+      if (option === 'manageNPCs' && !newBackstoryOptions[option]) {
+        newBackstoryOptions.exemptUser = false;
       }
-    }));
+      
+      if (option === 'intimacyDramaCheat' && !newBackstoryOptions[option]) {
+        newBackstoryOptions.userSpecificReactions = false;
+        newBackstoryOptions.userNPCReactions = false;
+      }
+      
+      return {
+        ...prev,
+        backstoryOptions: newBackstoryOptions
+      };
+    });
+  };
+
+  const handlePhonemeChange = (type, value, index = null) => {
+    setProfile(prev => {
+      const newPhonemeInputs = { ...prev.phonemeInputs };
+      
+      if (type === 'userSpecific') {
+        newPhonemeInputs.userSpecific = value;
+      } else if (type === 'general' && index !== null) {
+        const newGeneral = [...newPhonemeInputs.general];
+        newGeneral[index] = value;
+        newPhonemeInputs.general = newGeneral;
+      }
+      
+      return {
+        ...prev,
+        phonemeInputs: newPhonemeInputs
+      };
+    });
   };
 
   const handleStoryChange = (field, value) => {
@@ -306,7 +361,7 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
         {/* Header */}
         <div className="bg-white border border-gray-200 rounded-lg p-6 mb-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Adaptive Storytelling Character Compression Engine
+            Adaptive Storytelling Character Compression Engine V14
           </h1>
           <p className="text-gray-600 mb-4">
             Create agency-aware characters with rich narratives optimized for AI companion platforms
@@ -438,31 +493,132 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
             <div className="mb-6">
               <h3 className="text-sm font-medium text-gray-700 mb-3">Backstory Options</h3>
               <div className="space-y-3">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={profile.backstoryOptions.manageNPCs}
-                    onChange={() => handleBackstoryOptionChange('manageNPCs')}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-3"
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-gray-700">Manage NPCs</span>
-                    <p className="text-xs text-gray-500">Enables narration and speaking for non-player characters</p>
-                  </div>
-                </label>
+                <div className="flex items-center space-x-4">
+                  <label className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={profile.backstoryOptions.manageNPCs}
+                      onChange={() => handleBackstoryOptionChange('manageNPCs')}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-3"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-700">Manage NPCs</span>
+                      <p className="text-xs text-gray-500">Enables narration and speaking for non-player characters</p>
+                    </div>
+                  </label>
+                  
+                  {profile.backstoryOptions.manageNPCs && (
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={profile.backstoryOptions.exemptUser}
+                        onChange={() => handleBackstoryOptionChange('exemptUser')}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-3"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">Allow Speak/Act for User</span>
+                        <p className="text-xs text-gray-500">Prevents user involvement in NPC interactions</p>
+                      </div>
+                    </label>
+                  )}
+                </div>
                 
                 <label className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={profile.backstoryOptions.exemptUser}
-                    onChange={() => handleBackstoryOptionChange('exemptUser')}
+                    checked={profile.backstoryOptions.intimacyDramaCheat}
+                    onChange={() => handleBackstoryOptionChange('intimacyDramaCheat')}
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 mr-3"
                   />
                   <div>
-                    <span className="text-sm font-medium text-gray-700">Exempt User</span>
-                    <p className="text-xs text-gray-500">Adds exemption content to backstory</p>
+                    <span className="text-sm font-medium text-gray-700">Intimacy Drama Cheat</span>
+                    <p className="text-xs text-gray-500">Enables phoneme reaction systems</p>
                   </div>
                 </label>
+
+                {profile.backstoryOptions.intimacyDramaCheat && (
+                  <div className="ml-6 space-y-4 border-l-2 border-purple-200 pl-4">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={profile.backstoryOptions.userSpecificReactions}
+                        onChange={() => handleBackstoryOptionChange('userSpecificReactions')}
+                        className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 mr-3"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">User Specific Reactions</span>
+                        <p className="text-xs text-gray-500">Phoneme reactions to user speech only</p>
+                      </div>
+                    </label>
+
+                    {profile.backstoryOptions.userSpecificReactions && (
+                      <div className="bg-purple-50 border border-purple-200 rounded-md p-3">
+                        <label className="block text-xs font-medium text-gray-600 mb-2">User Specific Phoneme</label>
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="text"
+                            placeholder="dear"
+                            className="border border-purple-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            value={profile.phonemeInputs.userSpecific}
+                            onChange={(e) => handlePhonemeChange('userSpecific', e.target.value)}
+                          />
+                          <span className="text-sm text-gray-600">→ emotional connection uptick</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={profile.backstoryOptions.userNPCReactions}
+                        onChange={() => handleBackstoryOptionChange('userNPCReactions')}
+                        className="rounded border-gray-300 text-purple-600 focus:ring-purple-500 mr-3"
+                      />
+                      <div>
+                        <span className="text-sm font-medium text-gray-700">User + NPC Reactions</span>
+                        <p className="text-xs text-gray-500">General phoneme sensitivities for all interactions</p>
+                      </div>
+                    </label>
+
+                    {profile.backstoryOptions.userNPCReactions && (
+                      <div className="bg-purple-50 border border-purple-200 rounded-md p-3 space-y-3">
+                        <div className="flex items-center space-x-2">
+                          <label className="text-xs font-medium text-gray-600 w-20">Phoneme 1:</label>
+                          <input
+                            type="text"
+                            placeholder="honey"
+                            className="border border-purple-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            value={profile.phonemeInputs.general[0]}
+                            onChange={(e) => handlePhonemeChange('general', e.target.value, 0)}
+                          />
+                          <span className="text-sm text-gray-600">→ arousal uptick</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <label className="text-xs font-medium text-gray-600 w-20">Phoneme 2:</label>
+                          <input
+                            type="text"
+                            placeholder="gorgeous"
+                            className="border border-purple-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            value={profile.phonemeInputs.general[1]}
+                            onChange={(e) => handlePhonemeChange('general', e.target.value, 1)}
+                          />
+                          <span className="text-sm text-gray-600">→ intimacy nudge</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <label className="text-xs font-medium text-gray-600 w-20">Phoneme 3:</label>
+                          <input
+                            type="text"
+                            placeholder="sexy"
+                            className="border border-purple-300 rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            value={profile.phonemeInputs.general[2]}
+                            onChange={(e) => handlePhonemeChange('general', e.target.value, 2)}
+                          />
+                          <span className="text-sm text-gray-600">→ inhibition drop</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -826,7 +982,7 @@ KM4: Voice_pattern→[idiolect_preservation]{complexity:${navigationSophisticati
         {/* Footer */}
         <div className="text-center mt-8 pt-6 border-t border-gray-200">
           <p className="text-gray-500 text-sm">
-            Adaptive Storytelling Character Compression Engine • Kindroid AI Optimized
+            Adaptive Storytelling Character Compression Engine V14 • Kindroid AI Optimized
           </p>
           <p className="text-xs text-gray-400 mt-1">
             Agency-Aware Paradigm Framework with Narrative Enhancement for AI Companion Platforms
