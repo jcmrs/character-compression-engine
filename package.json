@@ -2,7 +2,7 @@
   "name": "character-compression-engine",
   "version": "1.0.0",
   "private": true,
-  "homepage": "https://yourusername.github.io/character-compression-engine",
+  "homepage": "https://jcmrs.github.io/character-compression-engine",
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
     "@testing-library/react": "^13.3.0",
